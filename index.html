@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minecraft - Tracker de Proyectos</title>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&family=Nunito:wght@600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --mc-bg: #e8f5e9;
+            --mc-card: #ffffff;
+            --mc-card-completed: #d4edda;
+            --mc-text: #2e4635;
+            --tomato-pastel: #ff7675;
+            --tomato-dark: #d63031;
+            --green-pastel: #a8e6cf;
+            --green-dark: #27ae60;
+            --border-color: #c8e6c9;
+            --border-completed: #81c784;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: var(--mc-bg);
+            color: var(--mc-text);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 850px;
+            margin: 0 auto;
+            animation: slideDown 0.5s ease-out;
+        }
+
+        header {
+            text-align: center;
+            background: var(--mc-card);
+            padding: 20px;
+            border-radius: 16px;
+            border: 3px solid var(--border-color);
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(46, 125, 50, 0.08);
+            transition: transform 0.3s ease;
+        }
+
+        header:hover {
+            transform: translateY(-2px);
+        }
+
+        h1 {
+            font-family: 'VT323', monospace;
+            font-size: 3rem;
+            color: var(--tomato-dark);
+            margin: 0 0 10px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        /* Botones de Navegación Grandes */
+        .nav-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .nav-btn {
+            background-color: var(--mc-card);
+            color: var(--mc-text);
+            border: 3px solid var(--border-color);
+            padding: 16px 32px;
+            border-radius: 14px;
+            font-family: 'VT323', monospace;
+            font-size: 2rem;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-btn:hover {
+            transform: scale(1.05);
+            border-color: var(--tomato-pastel);
+        }
+
+        .nav-btn:active {
+            transform: scale(0.98);
+        }
+
+        .nav-btn.active {
+            background-color: var(--tomato-dark);
+            color: white;
+            border-color: var(--tomato-dark);
+            box-shadow: 0 6px 12px rgba(214, 48, 49, 0.3);
+        }
+
+        /* Menú Desplegable de Proyectos */
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 20%;
+            width: 320px;
+            background: white;
+            border: 3px solid var(--border-color);
+            border-radius: 14px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+            z-index: 100;
+            margin-top: 8px;
+            overflow: hidden;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        .dropdown-menu.show {
+            display: block;
+        }
+
+        .dropdown-item {
+            padding: 12px 20px;
+            font-weight: 800;
+            font-size: 1.1rem;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s, transform 0.1s;
+        }
+
+        .dropdown-item:last-child {
+            border-bottom: none;
+        }
+
+        .dropdown-item:hover {
+            background-color: #f1f8e9;
+            color: var(--tomato-dark);
+            padding-left: 25px;
+        }
+
+        .dropdown-item.selected {
+            background-color: #c8e6c9;
+            color: #1b5e20;
+        }
+
+        /* Barra de Progreso Global */
+        .progress-section { margin-top: 15px; }
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 800;
+            margin-bottom: 8px;
+            font-size: 1.1rem;
+        }
+        .progress-bar-container {
+            background-color: #c8e6c9;
+            border-radius: 12px;
+            height: 24px;
+            width: 100%;
+            overflow: hidden;
+            border: 2px solid var(--border-color);
+        }
+        .progress-bar {
+            background: linear-gradient(90deg, var(--tomato-pastel), var(--green-dark));
+            height: 100%;
+            width: 0%;
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 10px;
+        }
+
+        /* Vistas de la App */
+        .view-section { display: none; }
+        .view-section.active { 
+            display: block; 
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        /* Formulario para Añadir Proyectos */
+        .add-project-card {
+            background: var(--mc-card);
+            border: 3px solid var(--border-color);
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 800;
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+            color: var(--mc-text);
+        }
+
+        .form-group input[type="text"] {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            font-family: 'Nunito', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input[type="text"]:focus {
+            border-color: var(--tomato-dark);
+        }
+
+        .submit-btn {
+            background: var(--green-dark);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 10px;
+            font-weight: 800;
+            font-size: 1.1rem;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.2s;
+            box-shadow: 0 4px 8px rgba(39, 174, 96, 0.2);
+        }
+
+        .submit-btn:hover { 
+            background: #1e8449;
+            transform: translateY(-2px);
+        }
+
+        /* Tarjeta de Proyecto */
+        .project-card {
+            background-color: var(--mc-card);
+            border: 3px solid var(--border-color);
+            border-radius: 14px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.03);
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .project-header {
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(200, 230, 201, 0.2);
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .project-title {
+            font-family: 'VT323', monospace;
+            font-size: 2.2rem;
+            margin: 0;
+        }
+
+        .project-body {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        /* Banner Tomatelandia Crece */
+        .welcome-card {
+            text-align: center;
+            padding: 50px 20px;
+            background: white;
+            border-radius: 16px;
+            border: 3px dashed var(--border-color);
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .welcome-title {
+            font-family: 'VT323', monospace;
+            font-size: 3.5rem;
+            color: var(--tomato-dark);
+            margin: 0 0 10px 0;
+            animation: pulseTitle 2s infinite ease-in-out;
+        }
+
+        .image-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 2px dashed var(--border-color);
+        }
+
+        .project-img {
+            width: 100%;
+            max-height: 350px;
+            object-fit: cover;
+            border-radius: 12px;
+            border: 2px solid var(--border-color);
+            background-color: #f1f8e9;
+            transition: transform 0.3s ease;
+        }
+
+        .project-img:hover {
+            transform: scale(1.01);
+        }
+
+        .upload-btn {
+            background-color: #81c784;
+            color: white;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 800;
+            cursor: pointer;
+            text-align: center;
+            display: inline-block;
+            transition: all 0.2s;
+        }
+
+        .upload-btn:hover {
+            background-color: #66bb6a;
+            transform: translateY(-2px);
+        }
+
+        .file-input { display: none; }
+
+        .phases-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .phase-group {
+            background: #f9fbe7;
+            padding: 14px;
+            border-radius: 12px;
+            border: 2px solid var(--border-color);
+            transition: transform 0.2s;
+        }
+
+        .phase-group:hover {
+            transform: translateX(4px);
+        }
+
+        .phase-title {
+            font-weight: 800;
+            margin-bottom: 10px;
+            font-size: 1.05rem;
+            color: var(--tomato-dark);
+        }
+
+        .tasks-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+        }
+
+        .task-item {
+            background-color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            font-size: 0.95rem;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s ease;
+        }
+
+        .task-item:hover {
+            border-color: var(--tomato-pastel);
+            transform: translateY(-1px);
+        }
+
+        .task-item input {
+            margin-right: 10px;
+            accent-color: var(--tomato-dark);
+            transform: scale(1.2);
+            cursor: pointer;
+        }
+
+        .task-item.checked {
+            background-color: #c8e6c9;
+            text-decoration: line-through;
+            color: #2e7d32;
+            animation: popCheck 0.3s ease-out;
+        }
+
+        .delete-btn {
+            background: transparent;
+            border: none;
+            color: #e74c3c;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1.3rem;
+            transition: transform 0.2s;
+        }
+
+        .delete-btn:hover {
+            transform: scale(1.2) rotate(90deg);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes popCheck {
+            0% { transform: scale(0.95); }
+            50% { transform: scale(1.03); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes pulseTitle {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>🏗️🍅 Tracker de Proyectos 🍅🏗️</h1>
+        <div class="progress-section">
+            <div class="progress-info">
+                <span>Progreso Global</span>
+                <span id="global-progress-text">0%</span>
+            </div>
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="global-progress-bar"></div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Botones Principales -->
+    <div class="nav-buttons">
+        <button class="nav-btn active" id="btn-view-projects" onclick="handleProjectsClick(event)">
+            📂 Proyectos Actuales ▾
+        </button>
+        <button class="nav-btn" id="btn-view-add" onclick="switchView('add')">
+            ➕ Añadir Proyecto
+        </button>
+
+        <!-- Desplegable de proyectos -->
+        <div class="dropdown-menu" id="projects-dropdown"></div>
+    </div>
+
+    <!-- Vista 1: Proyecto Seleccionado / Pantalla de Bienvenida -->
+    <div id="view-projects" class="view-section active">
+        <div id="project-display-container"></div>
+    </div>
+
+    <!-- Vista 2: Formulario Añadir Proyecto -->
+    <div id="view-add" class="view-section">
+        <div class="add-project-card">
+            <h2 style="font-family: 'VT323', monospace; font-size: 2.2rem; margin-top: 0; color: var(--tomato-dark);">Crear Nuevo Proyecto</h2>
+            
+            <div class="form-group">
+                <label for="new-project-name">Nombre de la Construcción:</label>
+                <input type="text" id="new-project-name" placeholder="Ej: Castillo Medieval, Granja de Aldeanos, Faro...">
+            </div>
+
+            <div class="form-group">
+                <label>Imagen de Referencia (Opcional):</label>
+                <label class="upload-btn">
+                    📷 Seleccionar Imagen
+                    <input type="file" id="new-project-image" class="file-input" accept="image/*" onchange="previewNewImage(event)">
+                </label>
+                <div style="margin-top: 10px; text-align: center;">
+                    <img id="new-image-preview" src="" style="max-height: 150px; border-radius: 8px; display: none; border: 2px solid var(--border-color);">
+                </div>
+            </div>
+
+            <button class="submit-btn" onclick="createNewProject()">🚀 Guardar Proyecto</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const defaultPhases = [
+        { name: "1. Arreglar la zona", tasks: ["Aplanar terreno", "Iluminación / Anti-mobs", "Delimitar área"] },
+        { name: "2. Conseguir materiales", tasks: ["Bloques principales", "Bloques de decoración", "Cristales / Iluminación"] },
+        { name: "3. Progreso de estructura", tasks: ["Cimientos", "Columnas y paredes", "Techo / Techado"] },
+        { name: "4. Fachada", tasks: ["Detalles exteriores", "Entrada principal", "Jardinería / Entorno"] },
+        { name: "5. Decoración interna", tasks: ["Distribución de cuartos", "Muebles / Iluminación", "Almacenamiento"] }
+    ];
+
+    let projectsData = JSON.parse(localStorage.getItem('mc_projects_data_v5')) || [];
+    let selectedProjectIndex = null;
+    let temporaryImageData = '';
+
+    function saveData() {
+        localStorage.setItem('mc_projects_data_v5', JSON.stringify(projectsData));
+        updateGlobalProgress();
+    }
+
+    function handleProjectsClick(e) {
+        e.stopPropagation();
+        
+        // Resetea el proyecto activo para volver a la tarjeta de Tomatelandia Crece
+        selectedProjectIndex = null;
+        
+        // Cambia la vista y refresca
+        switchView('projects');
+
+        // Muestra o esconde el menú desplegable
+        const dropdown = document.getElementById('projects-dropdown');
+        dropdown.classList.toggle('show');
+        renderDropdownList();
+    }
+
+    document.addEventListener('click', () => {
+        const dropdown = document.getElementById('projects-dropdown');
+        if (dropdown) dropdown.classList.remove('show');
+    });
+
+    function renderDropdownList() {
+        const dropdown = document.getElementById('projects-dropdown');
+        dropdown.innerHTML = '';
+
+        if (projectsData.length === 0) {
+            dropdown.innerHTML = `<div style="padding: 12px; text-align: center; color: #888;">No hay proyectos guardados</div>`;
+            return;
+        }
+
+        projectsData.forEach((project, index) => {
+            const item = document.createElement('div');
+            item.className = `dropdown-item ${index === selectedProjectIndex ? 'selected' : ''}`;
+            item.innerHTML = `
+                <span>${project.title}</span>
+                <span style="font-size: 0.85rem; color: #666;">${calculateProjectProgress(project)}%</span>
+            `;
+            item.onclick = (e) => {
+                e.stopPropagation();
+                selectedProjectIndex = index;
+                switchView('projects');
+                renderSelectedProject();
+                dropdown.classList.remove('show');
+            };
+            dropdown.appendChild(item);
+        });
+    }
+
+    function switchView(viewName) {
+        document.getElementById('view-projects').classList.remove('active');
+        document.getElementById('view-add').classList.remove('active');
+        document.getElementById('btn-view-projects').classList.remove('active');
+        document.getElementById('btn-view-add').classList.remove('active');
+
+        if (viewName === 'projects') {
+            document.getElementById('view-projects').classList.add('active');
+            document.getElementById('btn-view-projects').classList.add('active');
+            renderSelectedProject();
+        } else {
+            selectedProjectIndex = null;
+            document.getElementById('view-add').classList.add('active');
+            document.getElementById('btn-view-add').classList.add('active');
+        }
+    }
+
+    function calculateProjectProgress(project) {
+        let total = 0;
+        let completed = 0;
+        defaultPhases.forEach(phase => {
+            phase.tasks.forEach(taskName => {
+                total++;
+                if (project.tasksState[`${phase.name}_${taskName}`]) completed++;
+            });
+        });
+        return total > 0 ? Math.round((completed / total) * 100) : 0;
+    }
+
+    function renderSelectedProject() {
+        const container = document.getElementById('project-display-container');
+        container.innerHTML = '';
+
+        if (selectedProjectIndex === null || !projectsData[selectedProjectIndex]) {
+            container.innerHTML = `
+                <div class="welcome-card">
+                    <h2 class="welcome-title">✨ Tomatelandia Crece ✨</h2>
+                    <p style="font-size: 1.2rem; font-weight: 700; color: #555; margin-bottom: 25px;">
+                        Selecciona un proyecto del menú desplegable o crea uno nuevo para comenzar a construir.
+                    </p>
+                    <button class="submit-btn" style="width: auto; padding: 12px 24px;" onclick="switchView('add')">
+                        ➕ Crear Nuevo Proyecto
+                    </button>
+                </div>
+            `;
+            updateGlobalProgress();
+            return;
+        }
+
+        const project = projectsData[selectedProjectIndex];
+        let projectTotalTasks = 0;
+        let projectCompletedTasks = 0;
+
+        const card = document.createElement('div');
+        card.className = 'project-card';
+        card.id = project.id;
+
+        card.innerHTML = `
+            <div class="project-header">
+                <h2 class="project-title">${project.title}</h2>
+                <div>
+                    <span style="font-weight: 800; margin-right: 15px;" id="text-${project.id}">0%</span>
+                    <button class="delete-btn" onclick="deleteProject(${selectedProjectIndex})" title="Eliminar proyecto">✕</button>
+                </div>
+            </div>
+            <div style="padding: 0 20px; margin-top: 10px;">
+                <div class="progress-bar-container" style="height: 12px;">
+                    <div class="progress-bar" id="bar-${project.id}"></div>
+                </div>
+            </div>
+            <div class="project-body">
+                <div class="phases-list" id="phases-${project.id}"></div>
+                
+                <div class="image-container">
+                    <img src="${project.image || 'https://via.placeholder.com/600x300?text=Sin+Imagen+de+Referencia'}" class="project-img">
+                    <label class="upload-btn">
+                        📷 Cambiar Foto de Referencia
+                        <input type="file" class="file-input" accept="image/*" onchange="uploadImage(event, ${selectedProjectIndex})">
+                    </label>
+                </div>
+            </div>
+        `;
+
+        container.appendChild(card);
+
+        const phasesContainer = document.getElementById(`phases-${project.id}`);
+
+        defaultPhases.forEach(phase => {
+            const phaseDiv = document.createElement('div');
+            phaseDiv.className = 'phase-group';
+
+            const phaseTitle = document.createElement('div');
+            phaseTitle.className = 'phase-title';
+            phaseTitle.textContent = phase.name;
+
+            const tasksGrid = document.createElement('div');
+            tasksGrid.className = 'tasks-grid';
+
+            phase.tasks.forEach(taskName => {
+                projectTotalTasks++;
+
+                const taskKey = `${phase.name}_${taskName}`;
+                const isChecked = project.tasksState[taskKey] || false;
+
+                if (isChecked) projectCompletedTasks++;
+
+                const label = document.createElement('label');
+                label.className = `task-item ${isChecked ? 'checked' : ''}`;
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.checked = isChecked;
+
+                checkbox.addEventListener('change', () => {
+                    project.tasksState[taskKey] = checkbox.checked;
+                    saveData();
+                    renderSelectedProject();
+                });
+
+                const span = document.createElement('span');
+                span.textContent = taskName;
+
+                label.appendChild(checkbox);
+                label.appendChild(span);
+                tasksGrid.appendChild(label);
+            });
+
+            phaseDiv.appendChild(phaseTitle);
+            phaseDiv.appendChild(tasksGrid);
+            phasesContainer.appendChild(phaseDiv);
+        });
+
+        const projectPercentage = projectTotalTasks > 0 ? Math.round((projectCompletedTasks / projectTotalTasks) * 100) : 0;
+        document.getElementById(`bar-${project.id}`).style.width = projectPercentage + '%';
+        document.getElementById(`text-${project.id}`).textContent = `${projectPercentage}% (${projectCompletedTasks}/${projectTotalTasks})`;
+
+        updateGlobalProgress();
+    }
+
+    function updateGlobalProgress() {
+        let total = 0;
+        let completed = 0;
+
+        projectsData.forEach(p => {
+            defaultPhases.forEach(phase => {
+                phase.tasks.forEach(taskName => {
+                    total++;
+                    if (p.tasksState[`${phase.name}_${taskName}`]) completed++;
+                });
+            });
+        });
+
+        const globalPercentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+        document.getElementById('global-progress-bar').style.width = globalPercentage + '%';
+        document.getElementById('global-progress-text').textContent = `${globalPercentage}% (${completed}/${total} tareas completadas)`;
+    }
+
+    function previewNewImage(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            temporaryImageData = e.target.result;
+            const previewImg = document.getElementById('new-image-preview');
+            previewImg.src = temporaryImageData;
+            previewImg.style.display = 'inline-block';
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function createNewProject() {
+        const input = document.getElementById('new-project-name');
+        const name = input.value.trim();
+
+        if (name === '') {
+            alert('Por favor introduce un nombre para el proyecto');
+            return;
+        }
+
+        projectsData.push({
+            id: 'proj-' + Date.now(),
+            title: name,
+            image: temporaryImageData,
+            tasksState: {}
+        });
+
+        saveData();
+
+        input.value = '';
+        temporaryImageData = '';
+        document.getElementById('new-image-preview').style.display = 'none';
+        document.getElementById('new-project-image').value = '';
+
+        selectedProjectIndex = null;
+        switchView('projects');
+    }
+
+    function deleteProject(index) {
+        if (confirm('¿Seguro que quieres eliminar este proyecto?')) {
+            projectsData.splice(index, 1);
+            selectedProjectIndex = null;
+            saveData();
+            renderSelectedProject();
+        }
+    }
+
+    function uploadImage(event, projectIndex) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            projectsData[projectIndex].image = e.target.result;
+            saveData();
+            renderSelectedProject();
+        };
+        reader.readAsDataURL(file);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        renderSelectedProject();
+    });
+</script>
+
+</body>
+</html>
